@@ -24,5 +24,5 @@ Siga os passos abaixo para configurar o projeto em sua máquina local.
 
 ### 1. Clone o repositório
 ```bash
-git clone https://github.com/seu-usuario/game-user-app.git  # Substitua pelo seu repositório
-cd game-user-app
+git clone https://github.com/Gume123/gameboxreact-flask
+gameboxreact-flask
