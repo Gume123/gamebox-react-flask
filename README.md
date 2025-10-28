@@ -25,4 +25,9 @@ Siga os passos abaixo para configurar o projeto em sua máquina local.
 ### 1. Clone o repositório
 ```bash
 git clone https://github.com/Gume123/gameboxreact-flask
-gameboxreact-flask
+cd gamebox
+pip install flask
+pip install flask_login
+pip install flask_cors
+pip install models
+pip install flask_sqlalchemy
