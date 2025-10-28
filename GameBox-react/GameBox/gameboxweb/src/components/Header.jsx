@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '../styles/Header.css'; // Certifique-se de que o caminho está correto
 import logo from '../img/logo.png';
 
 function Header() {
+  const navigate = useNavigate();
   const savedUser = localStorage.getItem('user');
   const user = savedUser ? JSON.parse(savedUser) : null;
 
@@ -73,7 +75,13 @@ function Header() {
     <>
       <div className="Header">
         <div className="navBar">
-          <img className="logo" src={logo} alt="Logo" />
+          <img
+          className="logo"
+          src={logo}
+          alt="Logo"
+          onClick={() => navigate('/')}
+          style={{ cursor: 'pointer' }}
+      />
           <ul>
   {user ? (
     <>
@@ -91,7 +99,7 @@ function Header() {
       <li onClick={() => setShowLogin(true)}>Entrar</li>
     </>
   )}
-  <li>Jogos</li>
+  <li onClick={() => navigate('/catalogo')}>Jogos</li>
   <li>Listas</li>
 </ul>
 

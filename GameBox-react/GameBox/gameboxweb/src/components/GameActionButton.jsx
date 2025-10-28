@@ -12,18 +12,20 @@ function GameActionButton({ gameId, currentStatus, onActionSuccess }) {
     const [status, setStatus] = useState(currentStatus || 'na fila');
     const [isInLibrary, setIsInLibrary] = useState(!!currentStatus);
     const [loading, setLoading] = useState(false);
+    //const API_BASE_URL = 'http://localhost:5000/api/biblioteca';
+
 
     // Função genérica para requisições
     const handleRequest = async (url, method, body = null) => {
         setLoading(true);
         try {
-            const response = await fetch(url, {
+            const response = await fetch(url, { // A URL AGORA SEMPRE SERÁ COMPLETA
                 method: method,
                 headers: {
                     'Content-Type': 'application/json',
-                    // Se você precisar de um token de autenticação (JWT, por exemplo), adicione aqui
                 },
-                body: body ? JSON.stringify(body) : null,
+                body: body ? JSON.stringify(body) : null, 
+                credentials: 'include', // ESTÁ CORRETO AQUI!
             });
 
             const data = await response.json();
@@ -47,7 +49,7 @@ function GameActionButton({ gameId, currentStatus, onActionSuccess }) {
 
     const handleAddGame = async () => {
         const success = await handleRequest(
-            '/api/biblioteca/adicionar',
+            '/api/biblioteca/adicionar', 
             'POST',
             { jogo_id: gameId, status: status }
         );
@@ -58,7 +60,7 @@ function GameActionButton({ gameId, currentStatus, onActionSuccess }) {
 
     const handleRemoveGame = async () => {
         const success = await handleRequest(
-            `/api/biblioteca/remover/${gameId}`,
+            `/api/biblioteca/remover/${gameId}`, 
             'DELETE'
         );
         if (success) {
@@ -71,15 +73,13 @@ function GameActionButton({ gameId, currentStatus, onActionSuccess }) {
         const newStatus = e.target.value;
         setStatus(newStatus);
         
-        // Se já estiver na biblioteca, atualiza o status
         if (isInLibrary) {
             await handleRequest(
-                `/api/biblioteca/status/${gameId}`,
+                `/api/biblioteca/status/${gameId}`, 
                 'PUT',
                 { status: newStatus }
             );
         } else {
-            // Se não estiver, adiciona com o status selecionado
             await handleAddGame();
         }
     };

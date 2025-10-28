@@ -1,18 +1,45 @@
-from flask import Flask, request, jsonify 
+from flask import Flask, request, jsonify, session 
 from flask_cors import CORS
 from flask_login import LoginManager, login_user, login_required, current_user
 from db import db
 from models import Usuario, Jogos, Biblioteca
 import json
+from datetime import timedelta # Importe timedelta
+from werkzeug.middleware.proxy_fix import ProxyFix # Importe este módulo
+
+
 
 app = Flask(__name__)
-app.secret_key = "brunao"  # ⚠️ Em produção, use variável de ambiente!
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
-db.init_app(app)
-CORS(app, origins=["http://localhost:5173"])
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_host=1) 
 
+app.secret_key = "brunao"  # ⚠️ muda essa poha pelo amor de deus kkkkkk
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+app.config["SESSION_COOKIE_SAMESITE"] = "None" 
+app.config["SESSION_COOKIE_SECURE"] = False 
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30) 
+db.init_app(app)
+CORS(app, resources={
+    r"/api/*": {
+        "origins": ["http://localhost:5173"],  # origem do seu front
+        "supports_credentials": True,
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
 lm = LoginManager(app)
-lm.login_view = "login"
+lm.login_view = "api_login"
+
+# ... depois de lm = LoginManager(app) e lm.login_view = "api_login"
+
+@lm.unauthorized_handler
+def unauthorized():
+    # Retorna uma resposta JSON com status 401 para requisições de API
+    # não autenticadas.
+    return jsonify({
+        "success": False, 
+        "message": "Autenticação necessária para acessar este recurso."
+    }), 401
+
 
 @lm.user_loader
 def user_loader(id):
@@ -29,7 +56,8 @@ def api_login():
         user = db.session.query(Usuario).filter_by(email=email, senha=senha).first()
 
         if user:
-            login_user(user)
+            login_user(user, remember=True)
+            session.permanent = True
             return jsonify({
                 "success": True,
                 "message": "Login bem-sucedido!",
@@ -141,24 +169,8 @@ def pesquisar_jogos():
     ]
     return jsonify(lista)
 
-# ---------------- INICIALIZAÇÃO ----------------
-if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
 
-        # cria usuário padrão, se quiser
-        existing_user = Usuario.query.filter_by(email='user@example.com').first()
-        if not existing_user:
-            novo_usuario = Usuario(username='teste', email='user@example.com', senha='senha123')
-            db.session.add(novo_usuario)
-            db.session.commit()
-            print("Usuário 'user@example.com' adicionado com sucesso!")
-        else:
-            print("Usuário 'user@example.com' já existe no banco de dados.")
-
-    app.run(debug=True, port=5000)
-
-
+# ----------------- BIBLIOTECA -------------
 @app.route('/api/biblioteca', methods=['GET'])
 @login_required
 def get_biblioteca():
@@ -260,4 +272,24 @@ def remover_jogo_biblioteca(jogo_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'erro': 'Erro ao remover jogo da biblioteca'}), 500
+
+
+
+# ---------------- INICIALIZAÇÃO ----------------
+if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
+
+        # cria usuário padrão, se quiser
+        existing_user = Usuario.query.filter_by(email='user@example.com').first()
+        if not existing_user:
+            novo_usuario = Usuario(username='teste', email='user@example.com', senha='senha123')
+            db.session.add(novo_usuario)
+            db.session.commit()
+            print("Usuário 'user@example.com' adicionado com sucesso!")
+        else:
+            print("Usuário 'user@example.com' já existe no banco de dados.")
+
+    app.run(debug=True, port=5000)
+
 
